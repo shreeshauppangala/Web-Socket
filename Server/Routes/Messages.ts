@@ -1,19 +1,20 @@
-const express = require('express');
-const Message = require('../models/Message');
-const auth = require('../middleware/auth');
+import express, { Request, Response } from 'express';
+import Message from '../models/Message';
+import auth from '../Middlewares/auth';
 
 const router = express.Router();
 
 // Get messages for a room
-router.get('/:room', auth, async (req, res) => {
+router.get('/:room', auth, async (req: Request, res: Response) => {
   try {
     const { room } = req.params;
-    const { page = 1, limit = 50 } = req.query;
+    const page = parseInt((req.query.page as string) || '1', 10);
+    const limit = parseInt((req.query.limit as string) || '50', 10);
 
     const messages = await Message.find({ room })
       .populate('sender', 'username')
       .sort({ createdAt: -1 })
-      .limit(limit * 1)
+      .limit(limit)
       .skip((page - 1) * limit);
 
     res.json(messages.reverse());
@@ -23,12 +24,12 @@ router.get('/:room', auth, async (req, res) => {
 });
 
 // Send message (mainly for API, real-time via WebSocket)
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, async (req: Request, res: Response) => {
   try {
     const { content, room = 'general' } = req.body;
 
     const message = new Message({
-      sender: req.user._id,
+      sender: (req as any).user._id,
       content,
       room,
     });
@@ -42,4 +43,4 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

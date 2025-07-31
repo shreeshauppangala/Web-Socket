@@ -1,10 +1,12 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import User from '../models/User';
+import auth from '../Middlewares/auth';
 
 const router = express.Router();
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', async (req: Request, res: Response) => {
   try {
     const { username, email, password } = req.body;
 
@@ -24,9 +26,13 @@ router.post('/register', async (req, res) => {
     await user.save();
 
     // Generate token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d',
-    });
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET!,
+      {
+        expiresIn: '7d',
+      }
+    );
 
     res.status(201).json({
       token,
@@ -42,7 +48,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -63,9 +69,13 @@ router.post('/login', async (req, res) => {
     await user.save();
 
     // Generate token
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d',
-    });
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET!,
+      {
+        expiresIn: '7d',
+      }
+    );
 
     res.json({
       token,
@@ -81,27 +91,30 @@ router.post('/login', async (req, res) => {
 });
 
 // Get current user
-router.get('/me', auth, async (req, res) => {
+router.get('/me', auth, async (req: Request, res: Response) => {
+  const user = req.user;
   res.json({
     user: {
-      id: req.user._id,
-      username: req.user.username,
-      email: req.user.email,
+      id: user._id,
+      username: user.username,
+      email: user.email,
     },
   });
 });
 
 // Logout
-router.post('/logout', auth, async (req, res) => {
+router.post('/logout', auth, async (req: Request, res: Response) => {
   try {
     req.user.isOnline = false;
+
     req.user.lastSeen = new Date();
+
     await req.user.save();
 
     res.json({ message: 'Logged out successfully' });
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-module.exports = router;
+export default router;

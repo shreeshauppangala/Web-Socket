@@ -1,14 +1,18 @@
 import express from 'express';
 import http from 'http';
-import socketIo from 'socket.io';
+import { Server as SocketIOServer, Socket } from 'socket.io';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
+import authRoutes from './Routes/Auth';
+import messageRoutes from './Routes/Messages';
+import User, { IUser } from './models/User';
+import Message from './models/Message';
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
+const io = new SocketIOServer(server, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:3000',
     methods: ['GET', 'POST'],
@@ -31,11 +35,20 @@ mongoose
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
+// Extend Socket type for custom properties
+interface CustomSocket extends Socket {
+  userId?: string;
+  username?: string;
+}
+
 // Socket.IO authentication middleware
-io.use(async (socket, next) => {
+io.use(async (socket: CustomSocket, next) => {
   try {
     const token = socket.handshake.auth.token;
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || 'secret'
+    ) as any;
     const user = await User.findById(decoded.userId);
 
     if (!user) {
@@ -51,7 +64,7 @@ io.use(async (socket, next) => {
 });
 
 // Socket.IO connection handling
-io.on('connection', async (socket) => {
+io.on('connection', async (socket: CustomSocket) => {
   console.log(`User ${socket.username} connected`);
 
   // Update user online status
