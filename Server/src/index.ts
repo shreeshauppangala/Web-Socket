@@ -6,8 +6,8 @@ import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import authRoutes from './Routes/Auth';
 import messageRoutes from './Routes/Messages';
-import User, { IUser } from './models/User';
-import Message from './models/Message';
+import User from './Models/User';
+import Message from './Models/Message';
 require('dotenv').config();
 
 const app = express();
@@ -102,11 +102,11 @@ io.on('connection', async (socket: CustomSocket) => {
         _id: message._id,
         content: message.content,
         sender: {
-          _id: message.sender._id,
-          username: message.sender.username,
+          _id: (message.sender as any)._id,
+          username: (message.sender as any).username, // Fix: get username, not _id
         },
         room: message.room,
-        createdAt: message.createdAt,
+        createdAt: (message as any).createdAt,
       });
     } catch (error) {
       socket.emit('error', { message: 'Failed to send message' });
@@ -146,7 +146,7 @@ io.on('connection', async (socket: CustomSocket) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

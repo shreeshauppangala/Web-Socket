@@ -1,12 +1,12 @@
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
-import auth from '../Middlewares/auth';
+import auth, { AuthRequest } from '../Middlewares/Auth';
+import User from '../Models/User';
 
 const router = express.Router();
 
 // Register
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', async (req: AuthRequest, res: Response) => {
   try {
     const { username, email, password } = req.body;
 
@@ -42,13 +42,13 @@ router.post('/register', async (req: Request, res: Response) => {
         email: user.email,
       },
     });
-  } catch (error) {
+  } catch (error:any) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
 // Login
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', async (req: AuthRequest, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -85,14 +85,14 @@ router.post('/login', async (req: Request, res: Response) => {
         email: user.email,
       },
     });
-  } catch (error) {
+  } catch (error:any) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
 // Get current user
-router.get('/me', auth, async (req: Request, res: Response) => {
-  const user = req.user;
+router.get('/me', auth, async (req: AuthRequest, res: Response) => {
+  const user = req.user!;
   res.json({
     user: {
       id: user._id,
@@ -103,13 +103,12 @@ router.get('/me', auth, async (req: Request, res: Response) => {
 });
 
 // Logout
-router.post('/logout', auth, async (req: Request, res: Response) => {
+router.post('/logout', auth, async (req: AuthRequest, res: Response) => {
   try {
-    req.user.isOnline = false;
-
-    req.user.lastSeen = new Date();
-
-    await req.user.save();
+    const user = req.user!;
+    user.isOnline = false;
+    user.lastSeen = new Date();
+    await user.save();
 
     res.json({ message: 'Logged out successfully' });
   } catch (error: any) {

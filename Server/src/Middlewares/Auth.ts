@@ -1,21 +1,25 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
 import { Request, Response, NextFunction } from 'express';
+import User, { UserDoc } from '../Models/User';
+import mongoose from 'mongoose';
 
-interface AuthRequest extends Request {
-  user?: any;
+export interface AuthRequest extends Request {
+  user?: UserDoc;
 }
 
 const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.header('Authorization') || req.header('authorization');
+    const authHeader =
+      req.header('Authorization') || req.header('authorization');
     const token = authHeader?.replace('Bearer ', '');
 
     if (!token) {
       return res.status(401).json({ message: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: string;
+    };
     const user = await User.findById(decoded.userId).select('-password');
 
     if (!user) {
