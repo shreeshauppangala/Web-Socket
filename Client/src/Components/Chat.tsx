@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import io, { Socket } from 'socket.io-client';
 import { messageAPI } from '../Services/api';
 import { useAuth } from '../Context/Auth/useAuth';
@@ -13,12 +12,9 @@ const Chat = () => {
   const [typing, setTyping] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
 
-  const { user, onSignOut } = useAuth();
-  const navigate = useNavigate();
+  const { user, onSignOut, token } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const token = localStorage.getItem('token');
 
   useEffect(() => {
 
@@ -84,7 +80,7 @@ const Chat = () => {
     return () => {
       newSocket.close();
     };
-  }, [token, navigate]);
+  }, [token]);
 
   useEffect(() => {
     scrollToBottom();

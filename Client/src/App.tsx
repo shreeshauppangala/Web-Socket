@@ -1,33 +1,37 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
 import Chat from './Components/Chat';
 import Login from './Components/Login';
 import Register from './Components/Register';
 import { AuthProvider } from './Context/Auth/authProvider';
 import { useAuth } from './Context/Auth/useAuth';
+import { useEffect } from 'react';
 
 const ProtectedRoute = () => {
-  const { isSigningIn } = useAuth();
+  const { token } = useAuth();
+  const navigate = useNavigate();
 
-  const isAuthenticated = !!localStorage.getItem('user');
+  useEffect(() => {
+    if (!token) {
+      return navigate('/login', { replace: true });
+    }
+    return undefined;
+  }, [navigate, token]);
 
-  if (isSigningIn) {
-    return <div style={styles.loading}>Loading...</div>;
+  let component;
+  if (token) {
+    component = (
+        <Outlet />
+    );
+  } else {
+    component = <Navigate to='/login' replace />;
   }
-
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
+  return component;
 };
 
 const PublicRoute = () => {
-  const { isSigningIn } = useAuth();
+  const { token } = useAuth();
 
-  const isAuthenticated = !!localStorage.getItem('user');
-
-
-  if (isSigningIn) {
-    return <div style={styles.loading}>Loading...</div>;
-  }
-
-  return !isAuthenticated ? <Outlet /> : <Navigate to="/chat" />;
+  return !token ? <Outlet /> : <Navigate to="/chat" />;
 };
 
 const App = () => (
@@ -48,7 +52,7 @@ const App = () => (
           </Route>
           <Route element={<ProtectedRoute />}>
             <Route
-              path="/"
+              path="/chat"
               element={<Chat />}
             />
           </Route>

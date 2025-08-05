@@ -1,10 +1,10 @@
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import axios from "axios";
 import { useState, type ReactNode } from "react";
 import type { LoginFormI, RegisterFormI, UserI } from "../../Constants/interface";
 import { authAPI } from "../../Services/api";
-// import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AuthContext } from ".";
+import axios from "axios";
 
 interface ProvideAuthI {
   children: ReactNode;
@@ -16,7 +16,12 @@ const useAuthFunc = () => {
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  // const navigate = useNavigate();
+  const [token, setToken] = useState<string | null>(() => {
+    const storedToken = localStorage.getItem("token");
+    return storedToken || null;
+  });
+
+  const navigate = useNavigate();
 
   const queryClient = useQueryClient();
 
@@ -38,9 +43,10 @@ const useAuthFunc = () => {
   const { mutate: mutateSignIn, isPending: isSigningIn } = useMutation({
     mutationFn: authAPI.login,
     onSuccess: ({ data }) => {
-      localStorage.setItem("user", JSON.stringify({ ...data.data }));
-      setUser({ ...data.data });
-      // navigate("/chat");
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user);
+      setToken(data.token);
+      navigate("/chat");
       queryClient.setQueryData(["user"], data.data);
       localStorage.setItem("token", data.token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
@@ -82,7 +88,7 @@ const useAuthFunc = () => {
 //       select: ({ data }) => data,
 //     });
 
-  return { user, onSignUp, onSignIn, onSignOut, isSigningIn, isSigningOut, isSignUpLoading };
+  return { user, onSignUp, onSignIn, onSignOut, isSigningIn, isSigningOut, isSignUpLoading, token };
 
 }
 

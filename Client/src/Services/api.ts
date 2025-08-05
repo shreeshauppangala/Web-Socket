@@ -1,14 +1,11 @@
 import axios from 'axios';
 import type { LoginFormI, RegisterFormI } from '../Constants/interface';
 
-const API_BASE = import.meta.env.VITE_API_URL!;
-
-const api = axios.create({
-  baseURL: API_BASE,
-});
+axios.defaults.baseURL = import.meta.env.VITE_API_URL!;
+ axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token') || ''}`;
 
 // Handle auth errors
-api.interceptors.response.use(
+axios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
@@ -20,15 +17,13 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  register: (userData: RegisterFormI) => api.post('/auth/register', userData),
-  login: (credentials: LoginFormI) => api.post('/auth/login', credentials),
-  getCurrentUser: () => api.get('/auth/me'),
-  logout: () => api.post('/auth/logout'),
+  register: (userData: RegisterFormI) => axios.post('/auth/register', userData),
+  login: (credentials: LoginFormI) => axios.post('/auth/login', credentials),
+  getCurrentUser: () => axios.get('/auth/me'),
+  logout: () => axios.post('/auth/logout'),
 };
 
 export const messageAPI = {
-  getMessages: (room: 'general', page = 1) => api.get(`/messages/${room}?page=${page}`),
-  sendMessage: (messageData: { content: string; room: 'general' }) => api.post('/messages', messageData),
+  getMessages: (room: 'general', page = 1) => axios.get(`/messages/${room}?page=${page}`),
+  sendMessage: (messageData: { content: string; room: 'general' }) => axios.post('/messages', messageData),
 };
-
-export default api;

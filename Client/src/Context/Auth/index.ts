@@ -9,6 +9,7 @@ interface AuthI {
   isSigningIn: boolean;
   isSigningOut: boolean;
   isSignUpLoading: boolean;
+  token: string | null;
 }
 
 const AuthContext = createContext<AuthI | undefined>(undefined);
