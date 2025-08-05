@@ -235,7 +235,6 @@ const styles = {
     height: '100vh',
     display: 'flex',
     flexDirection: 'column',
-    backgroundColor: '#f5f5f5'
   },
   header: {
     backgroundColor: '#007bff',
@@ -244,7 +243,6 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
   },
   headerLeft: {
     display: 'flex',
@@ -279,17 +277,13 @@ const styles = {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    maxWidth: '800px',
-    margin: '0 auto',
     width: '100%',
     backgroundColor: 'white',
-    boxShadow: '0 0 10px rgba(0,0,0,0.1)'
   },
   messagesContainer: {
     flex: 1,
     padding: '1rem',
     overflowY: 'auto',
-    maxHeight: 'calc(100vh - 200px)'
   },
   message: {
     marginBottom: '1rem',
@@ -346,7 +340,7 @@ const styles = {
     border: '1px solid #ddd',
     borderRadius: '4px',
     marginRight: '0.5rem',
-    fontSize: '1rem'
+    fontSize: '1rem',
   },
   sendButton: {
     backgroundColor: '#28a745',

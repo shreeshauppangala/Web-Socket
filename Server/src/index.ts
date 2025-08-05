@@ -29,9 +29,7 @@ app.use('/api/messages', messageRoutes);
 
 // MongoDB connection
 mongoose
-  .connect(
-    process.env.MONGODB_URI || 'mongodb://localhost:27017/mern-websocket-chat'
-  )
+  .connect(process.env.MONGODB_URI!)
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
@@ -47,7 +45,7 @@ io.use(async (socket: CustomSocket, next) => {
     const token = socket.handshake.auth.token;
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'secret'
+      process.env.JWT_SECRET!
     ) as any;
     const user = await User.findById(decoded.userId);
 
