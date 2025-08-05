@@ -47,7 +47,7 @@ const useAuthFunc = () => {
       setUser(data.user);
       setToken(data.token);
       navigate("/chat");
-      queryClient.setQueryData(["user"], data.data);
+      queryClient.setQueryData(["user"], data.user);
       localStorage.setItem("token", data.token);
       axios.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
       queryClient.clear();
@@ -67,6 +67,7 @@ const useAuthFunc = () => {
       localStorage.clear();
       queryClient.clear();
       setUser(null);
+      setToken(null);
     },
     onError: (error) => {
       console.error(error);
