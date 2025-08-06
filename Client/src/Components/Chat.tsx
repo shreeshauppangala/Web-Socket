@@ -141,6 +141,7 @@ const Chat = () => {
   };
 
   const formatTime = (timestamp: Date) => {
+    timestamp= new Date(timestamp);
     return timestamp.toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit'
