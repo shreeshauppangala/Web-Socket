@@ -166,6 +166,14 @@ const Chat = () => {
         <div style={styles.messagesContainer}>
           {messages.map((message) => {
            const messageType = message.sender?._id === user._id ? 'ownMessage' : 'message';
+            let alignStyle = {};
+            if (message.messageType === 'system') {
+              alignStyle = styles.centeredMessage;
+            } else if (messageType === 'ownMessage') {
+              alignStyle = styles.rightMessage;
+            } else {
+              alignStyle = styles.leftMessage;
+            }
             return(
             <div
               key={message._id}
@@ -173,6 +181,7 @@ const Chat = () => {
                 ...styles.message,
                 ...(message.messageType === 'system' ? styles.systemMessage : {}),
                 ...(messageType === 'ownMessage' ? styles.ownMessage : {}),
+                ...alignStyle,
               }}
             >
               {message.messageType === 'system' ? (
@@ -297,6 +306,25 @@ const styles = {
     border: '1px solid #ffeaa7',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  rightMessage: {
+    marginLeft: 'auto',
+    marginRight: 0,
+    textAlign: 'right',
+    display: 'block',
+  },
+  leftMessage: {
+    marginLeft: 0,
+    marginRight: 'auto',
+    textAlign: 'left',
+    display: 'block',
+  },
+  centeredMessage: {
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    textAlign: 'center',
+    display: 'block',
+    width: 'fit-content',
   },
   messageHeader: {
     display: 'flex',
