@@ -19,10 +19,14 @@ export interface LoginFormI {
 }
 
 export interface MessageI {
-  _id: string;
-  sender: UserI;
+  _id?: string;
+  sender?: {
+    username: string;
+    _id: string;
+  };
   content: string;
-  room: string;
+  room?: string;
   messageType: 'text' | 'system';
-  createdAt: Date;
+  createdAt?: string;
+  updatedAt?: string;
 }

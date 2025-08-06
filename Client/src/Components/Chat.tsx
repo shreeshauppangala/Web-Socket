@@ -42,23 +42,15 @@ const Chat = () => {
 
     newSocket.on('userJoined', (data) => {
       setMessages(prev => [...prev, {
-        _id: data._id,
         content: data.message,
         messageType: 'system',
-        createdAt: new Date(),
-        sender: data.sender,
-        room: data.room
       }]);
     });
 
     newSocket.on('userLeft', (data) => {
       setMessages(prev => [...prev, {
-        _id: data._id,
         content: data.message,
         messageType: 'system',
-        createdAt: new Date(),
-        sender: data.sender,
-        room: data.room
       }]);
     });
 
@@ -140,9 +132,10 @@ const Chat = () => {
      onSignOut();
   };
 
-  const formatTime = (timestamp: Date) => {
-    timestamp= new Date(timestamp);
-    return timestamp.toLocaleTimeString([], {
+  const formatTime = (timestamp: string | undefined) => {
+    if (!timestamp) return '';
+    const timestampDate = new Date(timestamp);
+    return timestampDate.toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -171,13 +164,15 @@ const Chat = () => {
 
       <div style={styles.chatContainer}>
         <div style={styles.messagesContainer}>
-          {messages.map((message) => (
+          {messages.map((message) => {
+           const messageType = message.sender?._id === user._id ? 'ownMessage' : 'message';
+            return(
             <div
               key={message._id}
               style={{
                 ...styles.message,
                 ...(message.messageType === 'system' ? styles.systemMessage : {}),
-                ...(message.sender?._id === user._id ? styles.ownMessage : {})
+                ...(messageType === 'ownMessage' ? styles.ownMessage : {}),
               }}
             >
               {message.messageType === 'system' ? (
@@ -186,7 +181,7 @@ const Chat = () => {
                 <>
                   <div style={styles.messageHeader}>
                     <span style={styles.sender}>
-                      {message.sender?._id === user._id ? 'You' : message.sender?.username}
+                          {messageType === 'ownMessage' ? 'You' : message.sender?.username}
                     </span>
                     <span style={styles.timestamp}>
                       {formatTime(message.createdAt)}
@@ -196,7 +191,7 @@ const Chat = () => {
                 </>
               )}
             </div>
-          ))}
+          )})}
 
           {typing.length > 0 && (
             <div style={styles.typingIndicator}>
@@ -282,7 +277,6 @@ const styles = {
     backgroundColor: 'white',
   },
   messagesContainer: {
-    flex: 1,
     padding: '1rem',
     overflowY: 'auto',
   },
@@ -291,23 +285,24 @@ const styles = {
     padding: '0.75rem',
     borderRadius: '8px',
     backgroundColor: '#f8f9fa',
-    border: '1px solid #e9ecef'
+    border: '1px solid #e9ecef',
+    width: 'fit-content'
   },
   ownMessage: {
     backgroundColor: '#e3f2fd',
-    marginLeft: '2rem',
     border: '1px solid #bbdefb'
   },
   systemMessage: {
     backgroundColor: '#fff3cd',
     border: '1px solid #ffeaa7',
     textAlign: 'center',
-    fontStyle: 'italic'
+    fontStyle: 'italic',
   },
   messageHeader: {
     display: 'flex',
     justifyContent: 'space-between',
-    marginBottom: '0.25rem'
+    marginBottom: '0.25rem',
+    gap: '0.5rem'
   },
   sender: {
     fontWeight: 'bold',

@@ -80,7 +80,7 @@ router.post('/login', async (req: AuthRequest, res: Response) => {
     res.json({
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         username: user.username,
         email: user.email,
       },
