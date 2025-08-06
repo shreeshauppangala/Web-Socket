@@ -19,7 +19,7 @@ const Chat = () => {
   useEffect(() => {
 
     // Initialize socket connection
-    const newSocket = io(import.meta.env.VITE_API_SERVER_URL, {
+    const newSocket = io(import.meta.env.VITE_SERVER_URL, {
       auth: { token }
     });
 
