@@ -1,16 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import io, { Socket } from 'socket.io-client';
-import { messageAPI } from '../Services/api';
+import { messageAPI, roomAPI } from '../Services/api';
 import { useAuth } from '../Context/Auth/useAuth';
-import type { MessageI } from '../Constants/interface';
+import type { MessageI, RoomI, UserI } from '../Constants/interface';
 
 const Chat = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [messages, setMessages] = useState<MessageI[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  // const [onlineUsers, setOnlineUsers] = useState([]);
   const [typing, setTyping] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
+  const [rooms, setRooms] = useState<RoomI[]>([]);
+  const [selectedRoom, setSelectedRoom] = useState<RoomI | null>(null);
+  const [roomUsers, setRoomUsers] = useState<UserI[]>([]);
+  const [newRoomName, setNewRoomName] = useState('');
 
   const { user, onSignOut, token } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -78,9 +81,30 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
-  const loadMessages = async () => {
+  const fetchRooms = useCallback(async () => {
+    const res = await roomAPI.listRooms();
+    setRooms(res.data);
+    if (!selectedRoom && res.data.length > 0) setSelectedRoom(res.data[0]);
+  },[selectedRoom]);
+
+  useEffect(() => {
+    // Fetch rooms on mount
+    fetchRooms();
+  }, [fetchRooms]);
+
+  useEffect(() => {
+    if (selectedRoom) {
+      loadMessages(selectedRoom.name);
+      fetchRoomUsers(selectedRoom._id);
+      if (socket) {
+        socket.emit('joinRoom', selectedRoom.name);
+      }
+    }
+  }, [selectedRoom, socket]);
+
+  const loadMessages = async (roomName='general') => {
     try {
-      const response = await messageAPI.getMessages('general');
+      const response = await messageAPI.getMessages(roomName);
       setMessages(response.data);
     } catch (error) {
       console.error('Failed to load messages:', error);
@@ -89,6 +113,23 @@ const Chat = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+
+  const fetchRoomUsers = async (roomId: string) => {
+    const res = await roomAPI.getRoomUsers(roomId);
+    setRoomUsers(res.data);
+  };
+
+  const handleCreateRoom = async () => {
+    if (!newRoomName.trim()) return;
+    await roomAPI.createRoom(newRoomName.trim());
+    setNewRoomName('');
+    fetchRooms();
+  };
+
+  const handleSelectRoom = (room: RoomI) => {
+    setSelectedRoom(room);
   };
 
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
@@ -147,87 +188,127 @@ const Chat = () => {
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          <h2 style={styles.title}>Chat Room</h2>
-          <span style={styles.status}>
-            {socket?.connected ? '🟢 Connected' : '🔴 Disconnected'}
-          </span>
+      <div style={styles.mainChat}>
+        <div style={styles.header}>
+          <div style={styles.headerLeft}>
+            <h2 style={styles.title}>Chat Room</h2>
+            <span style={styles.status}>
+              {socket?.connected ? '🟢 Connected' : '🔴 Disconnected'}
+            </span>
+          </div>
+          <div style={styles.headerRight}>
+            <span style={styles.username}>Welcome, {user.username}!</span>
+            <button onClick={handleLogout} style={styles.logoutBtn}>
+              Logout
+            </button>
+          </div>
         </div>
-        <div style={styles.headerRight}>
-          <span style={styles.username}>Welcome, {user.username}!</span>
-          <button onClick={handleLogout} style={styles.logoutBtn}>
-            Logout
-          </button>
-        </div>
-      </div>
 
-      <div style={styles.chatContainer}>
-        <div style={styles.messagesContainer}>
-          {messages.map((message) => {
-           const messageType = message.sender?._id === user._id ? 'ownMessage' : 'message';
-            let alignStyle = {};
-            if (message.messageType === 'system') {
-              alignStyle = styles.centeredMessage;
-            } else if (messageType === 'ownMessage') {
-              alignStyle = styles.rightMessage;
-            } else {
-              alignStyle = styles.leftMessage;
-            }
-            return(
-            <div
-              key={message._id}
-              style={{
-                ...styles.message,
-                ...(message.messageType === 'system' ? styles.systemMessage : {}),
-                ...(messageType === 'ownMessage' ? styles.ownMessage : {}),
-                ...alignStyle,
-              }}
-            >
-              {message.messageType === 'system' ? (
-                <div style={styles.systemText}>{message.content}</div>
-              ) : (
-                <>
-                  <div style={styles.messageHeader}>
-                    <span style={styles.sender}>
+        <div style={styles.chatContainer}>
+          <div style={styles.sidebar}>
+            <div style={styles.roomsHeader}>Rooms</div>
+            <div style={styles.roomsList}>
+              {rooms.map((room) => (
+                <div
+                  key={room._id}
+                  style={{
+                    ...styles.roomItem,
+                    ...(selectedRoom?._id === room._id ? styles.selectedRoom : {}),
+                  }}
+                  onClick={() => handleSelectRoom(room)}
+                >
+                  {room.name}
+                </div>
+              ))}
+            </div>
+            <div style={styles.createRoom}>
+              <input
+                type="text"
+                value={newRoomName}
+                onChange={e => setNewRoomName(e.target.value)}
+                placeholder="New room name"
+                style={styles.roomInput}
+              />
+              <button onClick={handleCreateRoom} style={styles.createRoomBtn}>+</button>
+            </div>
+            <div style={styles.usersHeader}>Users</div>
+            <div style={styles.usersList}>
+              {roomUsers.map(u => (
+                <div key={u._id} style={styles.userItem}>
+                  {u.username} {u.isOnline ? '🟢' : '🔴'}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+          <div style={styles.messagesContainer}>
+            {messages.map((message) => {
+              const messageType = message.sender?._id === user._id ? 'ownMessage' : 'message';
+              let alignStyle = {};
+              if (message.messageType === 'system') {
+                alignStyle = styles.centeredMessage;
+              } else if (messageType === 'ownMessage') {
+                alignStyle = styles.rightMessage;
+              } else {
+                alignStyle = styles.leftMessage;
+              }
+              return (
+                <div
+                  key={message._id}
+                  style={{
+                    ...styles.message,
+                    ...(message.messageType === 'system' ? styles.systemMessage : {}),
+                    ...(messageType === 'ownMessage' ? styles.ownMessage : {}),
+                    ...alignStyle,
+                  }}
+                >
+                  {message.messageType === 'system' ? (
+                    <div style={styles.systemText}>{message.content}</div>
+                  ) : (
+                    <>
+                      <div style={styles.messageHeader}>
+                        <span style={styles.sender}>
                           {messageType === 'ownMessage' ? 'You' : message.sender?.username}
-                    </span>
-                    <span style={styles.timestamp}>
-                      {formatTime(message.createdAt)}
-                    </span>
-                  </div>
-                  <div style={styles.messageContent}>{message.content}</div>
-                </>
-              )}
-            </div>
-          )})}
+                        </span>
+                        <span style={styles.timestamp}>
+                          {formatTime(message.createdAt)}
+                        </span>
+                      </div>
+                      <div style={styles.messageContent}>{message.content}</div>
+                    </>
+                  )}
+                </div>
+              )
+            })}
 
-          {typing.length > 0 && (
-            <div style={styles.typingIndicator}>
-              {typing.join(', ')} {typing.length === 1 ? 'is' : 'are'} typing...
-            </div>
-          )}
+            {typing.length > 0 && (
+              <div style={styles.typingIndicator}>
+                {typing.join(', ')} {typing.length === 1 ? 'is' : 'are'} typing...
+              </div>
+            )}
 
-          <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} />
+          </div>
+
+          <form onSubmit={handleSendMessage} style={styles.messageForm}>
+            <input
+              type="text"
+              value={newMessage}
+              onChange={handleTyping}
+              placeholder="Type your message..."
+              style={styles.messageInput}
+              disabled={!connected}
+            />
+            <button
+              type="submit"
+              disabled={!connected || !newMessage.trim()}
+              style={styles.sendButton}
+            >
+              Send
+            </button>
+          </form>
+</div>
         </div>
-
-        <form onSubmit={handleSendMessage} style={styles.messageForm}>
-          <input
-            type="text"
-            value={newMessage}
-            onChange={handleTyping}
-            placeholder="Type your message..."
-            style={styles.messageInput}
-            disabled={!connected}
-          />
-          <button
-            type="submit"
-            disabled={!connected || !newMessage.trim()}
-            style={styles.sendButton}
-          >
-            Send
-          </button>
-        </form>
       </div>
     </div>
   );
@@ -238,6 +319,77 @@ export default Chat;
 const styles = {
   container: {
     height: '100vh',
+  },
+  sidebar: {
+    background: '#f1f3f6',
+    borderRight: '1px solid #e9ecef',
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '1rem 0.5rem',
+    gap: '1rem',
+    margin: '4rem 0',
+  },
+  roomsHeader: {
+    fontWeight: 'bold',
+    marginBottom: '0.5rem',
+    fontSize: '1.1rem',
+  },
+  roomsList: {
+    flex: '0 0 auto',
+    marginBottom: '1rem',
+    overflowY: 'auto',
+    maxHeight: '150px',
+  },
+  roomItem: {
+    padding: '0.5rem',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    marginBottom: '0.25rem',
+    background: '#fff',
+  },
+  selectedRoom: {
+    background: '#007bff',
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  createRoom: {
+    display: 'flex',
+    gap: '0.5rem',
+    marginBottom: '1rem',
+  },
+  roomInput: {
+    flex: 1,
+    padding: '0.25rem',
+    borderRadius: '4px',
+    border: '1px solid #ccc',
+  },
+  createRoomBtn: {
+    padding: '0.25rem 0.75rem',
+    borderRadius: '4px',
+    border: 'none',
+    background: '#28a745',
+    color: '#fff',
+    cursor: 'pointer',
+  },
+  usersHeader: {
+    fontWeight: 'bold',
+    marginBottom: '0.5rem',
+    fontSize: '1.1rem',
+  },
+  usersList: {
+    flex: 1,
+    overflowY: 'auto',
+    maxHeight: '150px',
+  },
+  userItem: {
+    padding: '0.25rem 0.5rem',
+    borderRadius: '4px',
+    marginBottom: '0.25rem',
+    background: '#fff',
+    fontSize: '0.95rem',
+  },
+  mainChat: {
+    flex: 1,
     display: 'flex',
     flexDirection: 'column',
   },
@@ -283,10 +435,9 @@ const styles = {
     cursor: 'pointer'
   },
   chatContainer: {
-    flex: 1,
     display: 'flex',
-    flexDirection: 'column',
     width: '100%',
+    height:'100vh',
     backgroundColor: 'white',
   },
   messagesContainer: {

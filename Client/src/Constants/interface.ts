@@ -30,3 +30,9 @@ export interface MessageI {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface RoomI {
+  _id: string;
+  name: string;
+  users: UserI[];
+}

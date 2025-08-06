@@ -24,6 +24,13 @@ export const authAPI = {
 };
 
 export const messageAPI = {
-  getMessages: (room: 'general', page = 1) => axios.get(`/messages/${room}?page=${page}`),
-  sendMessage: (messageData: { content: string; room: 'general' }) => axios.post('/messages', messageData),
+  getMessages: (room: string, page = 1) => axios.get(`/messages/${room}?page=${page}`),
+  sendMessage: (messageData: { content: string; room: string }) => axios.post('/messages', messageData),
+};
+
+export const roomAPI = {
+  listRooms: () => axios.get('/rooms'),
+  createRoom: (name: string) => axios.post('/rooms', { name }),
+  joinRoom: (roomId: string) => axios.post(`/rooms/${roomId}/join`),
+  getRoomUsers: (roomId: string) => axios.get(`/rooms/${roomId}/users`),
 };

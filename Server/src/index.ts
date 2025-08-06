@@ -6,8 +6,10 @@ import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import authRoutes from './Routes/Auth';
 import messageRoutes from './Routes/Messages';
+import roomRoutes from './Routes/Rooms';
 import User from './Models/User';
 import Message from './Models/Message';
+import Room from './Models/Room';
 require('dotenv').config();
 
 const app = express();
@@ -26,6 +28,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/rooms', roomRoutes);
 
 // MongoDB connection
 mongoose
@@ -35,7 +38,7 @@ mongoose
 
 // Extend Socket type for custom properties
 interface CustomSocket extends Socket {
-  userId?: string;
+  userId?: mongoose.Types.ObjectId;
   username?: string;
 }
 
@@ -111,11 +114,27 @@ io.on('connection', async (socket: CustomSocket) => {
     }
   });
 
-  // Handle joining rooms
-  socket.on('joinRoom', (room) => {
-    socket.leave('general');
-    socket.join(room);
-    socket.emit('joinedRoom', room);
+  // Join a room (default to 'general')
+  socket.on('joinRoom', async (roomName) => {
+    // Leave all rooms except socket.id
+    Object.keys(socket.rooms).forEach((r) => {
+      if (r !== socket.id) socket.leave(r);
+    });
+    let room = await Room.findOne({ name: roomName });
+    if (!room) {
+      room = new Room({ name: roomName, users: [socket.userId] });
+      await room.save();
+    } else if (socket.userId && !room.users.includes(socket.userId)) {
+      room.users.push(socket.userId);
+      await room.save();
+    }
+    socket.join(roomName);
+    socket.emit('joinedRoom', roomName);
+    // Notify others
+    socket.to(roomName).emit('userJoined', {
+      username: socket.username,
+      message: `${socket.username} joined the room`,
+    });
   });
 
   // Handle typing indicators
@@ -126,7 +145,7 @@ io.on('connection', async (socket: CustomSocket) => {
     });
   });
 
-  // Handle disconnect
+  // On disconnect, remove user from all rooms
   socket.on('disconnect', async () => {
     console.log(`User ${socket.username} disconnected`);
 
@@ -135,6 +154,12 @@ io.on('connection', async (socket: CustomSocket) => {
       isOnline: false,
       lastSeen: new Date(),
     });
+
+    // Remove user from all rooms
+    await Room.updateMany(
+      { users: socket.userId },
+      { $pull: { users: socket.userId } }
+    );
 
     // Broadcast user left
     socket.to('general').emit('userLeft', {
