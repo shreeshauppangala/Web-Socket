@@ -142,5 +142,7 @@ vite.config.ts.timestamp-*
 
 
 package-lock.json
+Client/package-lock.json
+Server/package-lock.json
 yarn.lock
 pnpm-lock.yaml
