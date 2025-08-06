@@ -3,6 +3,8 @@ import io, { Socket } from 'socket.io-client';
 import { messageAPI, roomAPI } from '../Services/api';
 import { useAuth } from '../Context/Auth/useAuth';
 import type { MessageI, RoomI, UserI } from '../Constants/interface';
+import RoomJoiner from './RoomJoiner';
+import ProfileModal from './ProfileModal';
 
 const Chat = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -14,6 +16,7 @@ const Chat = () => {
   const [selectedRoom, setSelectedRoom] = useState<RoomI | null>(null);
   const [roomUsers, setRoomUsers] = useState<UserI[]>([]);
   const [newRoomName, setNewRoomName] = useState('');
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const { user, onSignOut, token } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -188,6 +191,7 @@ const Chat = () => {
 
   return (
     <div style={styles.container}>
+      <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
       <div style={styles.mainChat}>
         <div style={styles.header}>
           <div style={styles.headerLeft}>
@@ -198,12 +202,14 @@ const Chat = () => {
           </div>
           <div style={styles.headerRight}>
             <span style={styles.username}>Welcome, {user.username}!</span>
+            <button onClick={() => setProfileOpen(true)} style={{ ...styles.logoutBtn, background: '#007bff', marginRight: 8 }}>
+              My Profile
+            </button>
             <button onClick={handleLogout} style={styles.logoutBtn}>
               Logout
             </button>
           </div>
         </div>
-
         <div style={styles.chatContainer}>
           <div style={styles.sidebar}>
             <div style={styles.roomsHeader}>Rooms</div>
@@ -239,6 +245,7 @@ const Chat = () => {
                 </div>
               ))}
             </div>
+            <RoomJoiner onJoin={fetchRooms} />
           </div>
           <div>
           <div style={styles.messagesContainer}>
