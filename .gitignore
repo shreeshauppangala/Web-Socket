@@ -68,6 +68,8 @@ web_modules/
 
 # dotenv environment variable files
 .env
+Server/.env
+Client/.env
 .env.*
 !.env.example
 
