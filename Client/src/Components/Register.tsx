@@ -46,6 +46,7 @@ const Register = () => {
     <div style={styles.container}>
       <div style={styles.form}>
         <h2 style={styles.title}>Create Account</h2>
+        {validationError && <div style={styles.error}>{validationError}</div>}
         <form onSubmit={handleSubmit}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Username:</label>

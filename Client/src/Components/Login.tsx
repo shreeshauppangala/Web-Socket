@@ -1,25 +1,22 @@
-import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../Context/Auth/useAuth';
+import { Controller, useForm } from 'react-hook-form';
+import type { LoginFormI } from '../Constants/interface';
+import { pattern } from '../Constants';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+  const { control, handleSubmit, formState: { errors } } = useForm<LoginFormI>({
+    mode: 'all',
+    defaultValues: {
+      email: '',
+      password: '',
+    },
   });
 
   const { onSignIn, isSigningIn } = useAuth();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-     onSignIn(formData);
+  const onSubmit = (data: LoginFormI) => {
+    onSignIn(data);
   };
 
   return (
@@ -27,32 +24,50 @@ const Login = () => {
       <div style={styles.form}>
         <h2 style={styles.title}>Login to Chat</h2>
 
-        {/* {error && <div style={styles.error}>{error}</div>} */}
+        {errors.email && <div style={styles.error}>{errors.email.message}</div>}
+        {errors.password && <div style={styles.error}>{errors.password.message}</div>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Email:</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              style={styles.input}
-              placeholder="Enter your email"
+            <Controller
+              name='email'
+              control={control}
+              rules={{
+                required: 'Email Is Required',
+                pattern: { value: pattern.email, message: 'Invalid Email' },
+              }}
+              render={({ field, }) => (
+                <input
+                  {...field}
+                  type="email"
+                  name="email"
+                  required
+                  style={styles.input}
+                  placeholder="Enter your email"
+                />
+              )}
             />
           </div>
-
           <div style={styles.inputGroup}>
             <label style={styles.label}>Password:</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              style={styles.input}
-              placeholder="Enter your password"
+            <Controller
+              name='password'
+              control={control}
+              rules={{
+                required: 'Password Is Required',
+              }}
+              render={({ field }) => (
+                <input
+                  {...field}
+                  type="password"
+                  name="password"
+                  required
+                  style={styles.input}
+                  placeholder="Enter your password"
+                />
+              )
+              }
             />
           </div>
 
