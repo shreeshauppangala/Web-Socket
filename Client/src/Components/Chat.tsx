@@ -248,6 +248,10 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: ' 1rem',
+    flexWrap: 'wrap',
+    position: 'fixed',
+    width: '100%',
   },
   headerLeft: {
     display: 'flex',
@@ -286,6 +290,7 @@ const styles = {
     backgroundColor: 'white',
   },
   messagesContainer: {
+    margin:'4rem 0', // Adjusted to account for fixed header height
     padding: '1rem',
     overflowY: 'auto',
   },
@@ -356,7 +361,11 @@ const styles = {
     display: 'flex',
     padding: '1rem',
     borderTop: '1px solid #e9ecef',
-    backgroundColor: '#f8f9fa'
+    backgroundColor: '#f8f9fa',
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0
   },
   messageInput: {
     flex: 1,
