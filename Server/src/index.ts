@@ -130,6 +130,13 @@ io.on('connection', async (socket: CustomSocket) => {
     }
     socket.join(roomName);
     socket.emit('joinedRoom', roomName);
+
+    // Send message history for the room to the user
+    const messages = await Message.find({ room: roomName })
+      .populate('sender', 'username')
+      .sort({ createdAt: 1 }); // oldest first
+    socket.emit('roomMessages', messages);
+
     // Notify others
     socket.to(roomName).emit('userJoined', {
       username: socket.username,

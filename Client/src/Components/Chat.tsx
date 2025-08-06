@@ -72,6 +72,10 @@ const Chat = () => {
       console.error('Socket error:', error);
     });
 
+    newSocket.on('roomMessages', (msgs) => {
+      setMessages(msgs);
+    });
+
     // Load initial messages
     loadMessages();
 
@@ -105,7 +109,7 @@ const Chat = () => {
     }
   }, [selectedRoom, socket]);
 
-  const loadMessages = async (roomName='general') => {
+  const loadMessages = async (roomName = 'general') => {
     try {
       const response = await messageAPI.getMessages(roomName);
       setMessages(response.data);
@@ -137,23 +141,23 @@ const Chat = () => {
 
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!newMessage.trim() || !socket) return;
+    if (!newMessage.trim() || !socket || !selectedRoom) return;
 
     socket.emit('sendMessage', {
       content: newMessage.trim(),
-      room: 'general'
+      room: selectedRoom.name
     });
 
     setNewMessage('');
 
     // Stop typing indicator
-    socket.emit('typing', { room: 'general', isTyping: false });
+    socket.emit('typing', { room: selectedRoom.name, isTyping: false });
   };
 
   const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
 
-    if (!socket) return;
+    if (!socket || !selectedRoom) return;
 
     // Clear previous timeout
     if (typingTimeoutRef.current) {
@@ -161,11 +165,11 @@ const Chat = () => {
     }
 
     // Send typing indicator
-    socket.emit('typing', { room: 'general', isTyping: true });
+    socket.emit('typing', { room: selectedRoom.name, isTyping: true });
 
     // Stop typing after 2 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
-      socket.emit('typing', { room: 'general', isTyping: false });
+      socket.emit('typing', { room: selectedRoom.name, isTyping: false });
     }, 2000);
   };
 
