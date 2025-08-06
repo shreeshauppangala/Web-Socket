@@ -247,7 +247,7 @@ const Chat = () => {
             </div>
             <RoomJoiner onJoin={fetchRooms} />
           </div>
-          <div>
+          <div style={{width: '100%',marginLeft: '14rem'}}>
           <div style={styles.messagesContainer}>
             {messages.map((message) => {
               const messageType = message.sender?._id === user._id ? 'ownMessage' : 'message';
@@ -335,6 +335,8 @@ const styles = {
     padding: '1rem 0.5rem',
     gap: '1rem',
     margin: '4rem 0',
+    position: 'fixed',
+    height: '100%',
   },
   roomsHeader: {
     fontWeight: 'bold',
@@ -342,7 +344,6 @@ const styles = {
     fontSize: '1.1rem',
   },
   roomsList: {
-    flex: '0 0 auto',
     marginBottom: '1rem',
     overflowY: 'auto',
     maxHeight: '150px',
@@ -444,7 +445,7 @@ const styles = {
   chatContainer: {
     display: 'flex',
     width: '100%',
-    height:'100vh',
+    minHeight: '100vh',
     backgroundColor: 'white',
   },
   messagesContainer: {
